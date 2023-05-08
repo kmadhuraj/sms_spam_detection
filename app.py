@@ -50,17 +50,12 @@ def login():
 def home():
     return render_template('index.html')
 
-# load the tokenizer from a file
-with open('tokenizer.pkl', 'rb') as handle:
-    tokenizer = pickle.load(handle)
-    # tokenizer_loaded = tokenizer
+
 
 # define a route for the SMS spam detection form submission
 @app.route('/predict', methods=['POST','GET'])
 
-def predict():
-    model = tf.keras.models.load_model('sms_spam.h5')
-    
+def predict():  
     if request.method == 'POST':
         message = request.form['message1']
         if message:
@@ -79,20 +74,28 @@ def predict():
 
                 cleaned_text = ' '.join(words)
                 return cleaned_text
-            cleaned=cleaned_text(message)
-        
-            max_features=2000
-            delimiter=' '
-            tokenizer = Tokenizer(num_words=max_features, split=delimiter)
             
+
+            
+            #setup tokenizer
+            max_features=2000
+            tokenizer = Tokenizer(num_words=max_features)
+
+            
+            #cleaning input message
+            cleaned=cleaned_text(message)
+
             tokenizer.fit_on_texts(cleaned)
+
             sequences = tokenizer.texts_to_sequences(cleaned)
 
-            padded = pad_sequences(sequences, maxlen=152, padding='post', truncating='post')
-            array=np.array(padded)
+            maxlen = 152
+            padded = pad_sequences(sequences, maxlen=maxlen, padding='post', truncating='post')
 
-            
-            prediction = model.predict(array)[0][0]
+            from keras.models import load_model
+            model=load_model('./sms_spam.h5')
+
+            prediction = model.predict(padded)[0][0]
             
             if prediction >=0.5:
                 predicted=1
@@ -104,6 +107,7 @@ def predict():
             return "Please provide a message to classify."
     else:
         return "request is not post"
+     
 
 if __name__ == '__main__':
     app.run(debug=True)
@@ -120,27 +124,4 @@ if __name__ == '__main__':
 
 
 
-            # tokenizer_loaded=tokenizer
-            # if request.method== 'POST':
-            #     message = request.form['message1']
-                
-            #     sequences = tokenizer_loaded.texts_to_sequences([message])
-            #     maxlen = tokenizer_loaded.get('maxlen')
-            #     padded = pad_sequences(sequences, maxlen=maxlen, padding='post', truncating='post')
-        
-            
-            #     tokenizer_loaded=tokenizer
-            #     if tokenizer_loaded is not None:
-            #         sequences = tokenizer_loaded.texts_to_sequences([message])
-            #         maxlen = tokenizer_loaded.get('maxlen')
-            #         padded = pad_sequences(sequences, maxlen=maxlen, padding='post', truncating='post')
-            # else:
-            #     return ""
-            
-        
-            # prediction = model.predict(np.array(padded))[0][0]
-
-            
-            # return render_template('home.html',pred=prediction)
-
-
+       
